@@ -126,7 +126,11 @@ def main():
         ai_reply = chat_with_ai(update.effective_chat.id, user_text)
         
         # Cập nhật kết quả lên tin nhắn tạm
-        await temp_msg.edit_text(ai_reply, parse_mode="Markdown")
+        try:
+            await temp_msg.edit_text(ai_reply, parse_mode="Markdown")
+        except Exception:
+            # Nếu AI gửi ký tự lạ làm Telegram báo lỗi Markdown, thì in ra dạng văn bản thô
+            await temp_msg.edit_text(ai_reply)
         
     from telegram.ext import MessageHandler, filters
     app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_normal_chat))
