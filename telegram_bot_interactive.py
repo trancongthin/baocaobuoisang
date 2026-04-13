@@ -10,8 +10,12 @@ from src.notes_reader import get_today_tasks
 from src.ai_summarizer import generate_morning_report
 
 load_dotenv()
-TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-ALLOWED_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+# Thêm lớp khiên tút lại mã khóa: Tự động gọt bỏ dấu ngoặc kép và dấu cách thừa nếu Sếp chép lố tay
+_raw_token = os.getenv("TELEGRAM_BOT_TOKEN") or ""
+TOKEN = _raw_token.strip().strip('"').strip("'")
+
+_raw_chat = os.getenv("TELEGRAM_CHAT_ID") or ""
+ALLOWED_CHAT_ID = _raw_chat.strip().strip('"').strip("'")
 
 # Bật log
 logging.basicConfig(
