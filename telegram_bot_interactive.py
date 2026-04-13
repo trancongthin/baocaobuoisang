@@ -1,5 +1,7 @@
 import os
 import logging
+from datetime import time
+import pytz
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
@@ -7,7 +9,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from src.config_manager import load_topics, add_topic, remove_topic
 from src.news_scraper import get_top_news
 from src.notes_reader import get_today_tasks
-from src.ai_summarizer import generate_morning_report
+from src.ai_summarizer import generate_morning_report, chat_with_ai
 
 load_dotenv()
 # Thêm lớp khiên tút lại mã khóa: Tự động gọt bỏ dấu ngoặc kép và dấu cách thừa nếu Sếp chép lố tay
@@ -85,6 +87,20 @@ async def baocao(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await msg.edit_text(report, parse_mode="Markdown")
 
+async def auto_morning_report(context: ContextTypes.DEFAULT_TYPE):
+    print("⏰ Đã tới giờ báo cáo buổi sáng tự động...")
+    try:
+        news_text = get_top_news()
+        tasks_text = get_today_tasks()
+        report = generate_morning_report(news_text, tasks_text)
+        await context.bot.send_message(
+            chat_id=ALLOWED_CHAT_ID, 
+            text=f"🌞 *BÁO CÁO CỮ SÁNG ĐỊNH KỲ:*\n\n{report}", 
+            parse_mode="Markdown"
+        )
+    except Exception as e:
+        print(f"Lỗi khi gửi báo cáo tự động: {e}")
+
 def main():
     if not TOKEN:
         print("Lỗi: Không tìm thấy TELEGRAM_BOT_TOKEN")
@@ -97,6 +113,22 @@ def main():
     app.add_handler(CommandHandler("chude", list_topics))
     app.add_handler(CommandHandler("them", cmd_add_topic))
     app.add_handler(CommandHandler("xoa", cmd_remove_topic))
+
+    # Xử lý tin nhắn chat bình thường (Chế độ Trợ lý AI)
+    async def handle_normal_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        if str(update.effective_chat.id) != ALLOWED_CHAT_ID: return
+        user_text = update.message.text
+        # Ném vào não Gemini và lấy câu trả lời
+        ai_reply = chat_with_ai(update.effective_chat.id, user_text)
+        await update.message.reply_text(ai_reply, parse_mode="Markdown")
+        
+    from telegram.ext import MessageHandler, filters
+    app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_normal_chat))
+
+    # Cài đặt đồng hồ cho chạy báo cáo tự động lúc 07:00:00 (Sáng VN)
+    vietnam_tz = pytz.timezone('Asia/Ho_Chi_Minh')
+    t = time(hour=7, minute=0, tzinfo=vietnam_tz)
+    app.job_queue.run_daily(auto_morning_report, time=t)
 
     print("🤖 Bot đang chạy ngầm lẩn khuất chờ lệnh...!")
     app.run_polling()

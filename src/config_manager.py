@@ -6,7 +6,7 @@ CONFIG_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'topics.j
 def load_topics():
     if not os.path.exists(CONFIG_FILE):
         # Mặc định danh sách chủ đề ban đầu ban đầu
-        default_topics = ["Trí tuệ nhân tạo", "Kinh doanh nội địa"]
+        default_topics = ["Phân tích Marketing", "Góc nhìn Doanh nhân", "Xu hướng Đầu tư chung, Công nghệ và Trí tuệ AI"]
         save_topics(default_topics)
         return default_topics
     with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
