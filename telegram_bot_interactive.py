@@ -118,9 +118,15 @@ def main():
     async def handle_normal_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if str(update.effective_chat.id) != ALLOWED_CHAT_ID: return
         user_text = update.message.text
+        
+        # Báo hiệu đang nhận lệnh để Sếp không tưởng bot bị sập
+        temp_msg = await update.message.reply_text("🧠 *[Đang suy nghĩ...]*", parse_mode="Markdown")
+        
         # Ném vào não Gemini và lấy câu trả lời
         ai_reply = chat_with_ai(update.effective_chat.id, user_text)
-        await update.message.reply_text(ai_reply, parse_mode="Markdown")
+        
+        # Cập nhật kết quả lên tin nhắn tạm
+        await temp_msg.edit_text(ai_reply, parse_mode="Markdown")
         
     from telegram.ext import MessageHandler, filters
     app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_normal_chat))
